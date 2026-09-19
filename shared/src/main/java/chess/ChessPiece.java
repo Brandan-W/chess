@@ -58,6 +58,10 @@ public class ChessPiece {
             return rookMoves(board, myPosition);
         }
 
+        if (type == PieceType.BISHOP) {
+            return bishopMoves(board, myPosition);
+        }
+
         throw new RuntimeException("Not implemented");
     }
 
@@ -65,14 +69,40 @@ public class ChessPiece {
      * Calculates all valid rook moves.
      */
     private Collection<ChessMove> rookMoves(ChessBoard board, ChessPosition myPosition) {
-        Collection<ChessMove> moves = new ArrayList<>();
-
         int[][] directions = {
                 {1, 0},
                 {-1, 0},
                 {0, 1},
                 {0, -1}
         };
+
+        return slidingMoves(board, myPosition, directions);
+    }
+
+    /**
+     * Calculates all valid bishop moves.
+     */
+    private Collection<ChessMove> bishopMoves(ChessBoard board, ChessPosition myPosition) {
+        int[][] directions = {
+                {1, 1},
+                {1, -1},
+                {-1, 1},
+                {-1, -1}
+        };
+
+        return slidingMoves(board, myPosition, directions);
+    }
+
+    /**
+     * Calculates movement for pieces that move repeatedly
+     * in a straight direction until blocked.
+     */
+    private Collection<ChessMove> slidingMoves(
+            ChessBoard board,
+            ChessPosition myPosition,
+            int[][] directions) {
+
+        Collection<ChessMove> moves = new ArrayList<>();
 
         for (int[] direction : directions) {
             int row = myPosition.getRow() + direction[0];
@@ -107,6 +137,17 @@ public class ChessPiece {
         return row >= 1 && row <= 8
                 && col >= 1 && col <= 8;
     }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
