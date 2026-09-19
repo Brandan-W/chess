@@ -66,6 +66,10 @@ public class ChessPiece {
             return queenMoves(board, myPosition);
         }
 
+        if (type == PieceType.KNIGHT) {
+            return knightMoves(board, myPosition);
+        }
+
         throw new RuntimeException("Not implemented");
     }
 
@@ -115,10 +119,6 @@ public class ChessPiece {
         return slidingMoves(board, myPosition, directions);
     }
 
-
-
-
-
     /**
      * Calculates movement for pieces that move repeatedly
      * in a straight direction until blocked.
@@ -162,6 +162,44 @@ public class ChessPiece {
     private boolean isOnBoard(int row, int col) {
         return row >= 1 && row <= 8
                 && col >= 1 && col <= 8;
+    }
+
+    /**
+     * Calculates all valid knight moves.
+     */
+    private Collection<ChessMove> knightMoves(ChessBoard board, ChessPosition myPosition) {
+        Collection<ChessMove> moves = new ArrayList<>();
+
+        int[][] jumps = {
+                {2, 1},
+                {2, -1},
+                {-2, 1},
+                {-2, -1},
+                {1, 2},
+                {1, -2},
+                {-1, 2},
+                {-1, -2}
+        };
+
+        for (int[] jump : jumps) {
+            int row = myPosition.getRow() + jump[0];
+            int col = myPosition.getColumn() + jump[1];
+
+            if (!isOnBoard(row, col)) {
+                continue;
+            }
+
+            ChessPosition endPosition = new ChessPosition(row, col);
+            ChessPiece pieceAtPosition = board.getPiece(endPosition);
+
+            if (pieceAtPosition == null
+                    || pieceAtPosition.getTeamColor() != pieceColor) {
+
+                moves.add(new ChessMove(myPosition, endPosition, null));
+            }
+        }
+
+        return moves;
     }
 
 
