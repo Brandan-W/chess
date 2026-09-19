@@ -62,6 +62,10 @@ public class ChessPiece {
             return bishopMoves(board, myPosition);
         }
 
+        if (type == PieceType.QUEEN) {
+            return queenMoves(board, myPosition);
+        }
+
         throw new RuntimeException("Not implemented");
     }
 
@@ -92,6 +96,28 @@ public class ChessPiece {
 
         return slidingMoves(board, myPosition, directions);
     }
+
+    /**
+     * Calculates all valid queen moves.
+     */
+    private Collection<ChessMove> queenMoves(ChessBoard board, ChessPosition myPosition) {
+        int[][] directions = {
+                {1, 0},
+                {-1, 0},
+                {0, 1},
+                {0, -1},
+                {1, 1},
+                {1, -1},
+                {-1, 1},
+                {-1, -1}
+        };
+
+        return slidingMoves(board, myPosition, directions);
+    }
+
+
+
+
 
     /**
      * Calculates movement for pieces that move repeatedly
