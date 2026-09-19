@@ -1,5 +1,6 @@
 package chess;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 
@@ -53,8 +54,63 @@ public class ChessPiece {
      * @return Collection of valid moves
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
+        if (type == PieceType.ROOK) {
+            return rookMoves(board, myPosition);
+        }
+
         throw new RuntimeException("Not implemented");
     }
+
+    /**
+     * Calculates all valid rook moves.
+     */
+    private Collection<ChessMove> rookMoves(ChessBoard board, ChessPosition myPosition) {
+        Collection<ChessMove> moves = new ArrayList<>();
+
+        int[][] directions = {
+                {1, 0},
+                {-1, 0},
+                {0, 1},
+                {0, -1}
+        };
+
+        for (int[] direction : directions) {
+            int row = myPosition.getRow() + direction[0];
+            int col = myPosition.getColumn() + direction[1];
+
+            while (isOnBoard(row, col)) {
+                ChessPosition endPosition = new ChessPosition(row, col);
+                ChessPiece pieceAtPosition = board.getPiece(endPosition);
+
+                if (pieceAtPosition == null) {
+                    moves.add(new ChessMove(myPosition, endPosition, null));
+                } else {
+                    if (pieceAtPosition.getTeamColor() != pieceColor) {
+                        moves.add(new ChessMove(myPosition, endPosition, null));
+                    }
+
+                    break;
+                }
+
+                row += direction[0];
+                col += direction[1];
+            }
+        }
+
+        return moves;
+    }
+
+    /**
+     * Checks whether a row and column are inside the chess board.
+     */
+    private boolean isOnBoard(int row, int col) {
+        return row >= 1 && row <= 8
+                && col >= 1 && col <= 8;
+    }
+
+
+
+
 
     @Override
     public boolean equals(Object o) {
