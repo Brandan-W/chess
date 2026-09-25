@@ -74,6 +74,10 @@ public class ChessPiece {
             return kingMoves(board, myPosition);
         }
 
+        if (type == PieceType.PAWN) {
+            return pawnMoves(board, myPosition);
+        }
+
         throw new RuntimeException("Not implemented");
     }
 
@@ -244,20 +248,156 @@ public class ChessPiece {
         return moves;
     }
 
+    /**
+     * Calculates all valid king moves.
+     */
+    private Collection<ChessMove> pawnMoves(ChessBoard board, ChessPosition myPosition) {
+        Collection<ChessMove> moves = new ArrayList<>();
 
+        int direction;
+        int startingRow;
+        int promotionRow;
 
+        if (pieceColor == ChessGame.TeamColor.WHITE) {
+            direction = 1;
+            startingRow = 2;
+            promotionRow = 8;
+        } else {
+            direction = -1;
+            startingRow = 7;
+            promotionRow = 1;
+        }
 
+        int currentRow = myPosition.getRow();
+        int currentCol = myPosition.getColumn();
 
+        // Move forward one square
+        int oneStepRow = currentRow + direction;
 
+        if (isOnBoard(oneStepRow, currentCol)) {
+            ChessPosition oneStepPosition =
+                    new ChessPosition(oneStepRow, currentCol);
 
+            if (board.getPiece(oneStepPosition) == null) {
 
+                addPawnMove(
+                        moves,
+                        myPosition,
+                        oneStepPosition,
+                        promotionRow
+                );
 
+                // Move forward two squares from starting row
+                if (currentRow == startingRow) {
+                    int twoStepRow = currentRow + (2 * direction);
 
+                    ChessPosition twoStepPosition =
+                            new ChessPosition(twoStepRow, currentCol);
 
+                    if (board.getPiece(twoStepPosition) == null) {
+                        moves.add(
+                                new ChessMove(
+                                        myPosition,
+                                        twoStepPosition,
+                                        null
+                                )
+                        );
+                    }
+                }
+            }
+        }
 
+        // Capture diagonally left
+        int captureLeftCol = currentCol - 1;
+        int captureRow = currentRow + direction;
 
+        if (isOnBoard(captureRow, captureLeftCol)) {
+            ChessPosition capturePosition =
+                    new ChessPosition(captureRow, captureLeftCol);
 
+            ChessPiece pieceAtPosition =
+                    board.getPiece(capturePosition);
 
+            if (pieceAtPosition != null
+                    && pieceAtPosition.getTeamColor() != pieceColor) {
+
+                addPawnMove(
+                        moves,
+                        myPosition,
+                        capturePosition,
+                        promotionRow
+                );
+            }
+        }
+
+        // Capture diagonally right
+        int captureRightCol = currentCol + 1;
+
+        if (isOnBoard(captureRow, captureRightCol)) {
+            ChessPosition capturePosition =
+                    new ChessPosition(captureRow, captureRightCol);
+
+            ChessPiece pieceAtPosition =
+                    board.getPiece(capturePosition);
+
+            if (pieceAtPosition != null
+                    && pieceAtPosition.getTeamColor() != pieceColor) {
+
+                addPawnMove(
+                        moves,
+                        myPosition,
+                        capturePosition,
+                        promotionRow
+                );
+            }
+        }
+
+        return moves;
+    }
+
+    /**
+     * Adds a normal pawn move or all possible promotion moves.
+     */
+    private void addPawnMove(
+            Collection<ChessMove> moves,
+            ChessPosition startPosition,
+            ChessPosition endPosition,
+            int promotionRow) {
+
+        if (endPosition.getRow() == promotionRow) {
+
+            moves.add(new ChessMove(
+                    startPosition,
+                    endPosition,
+                    PieceType.QUEEN
+            ));
+
+            moves.add(new ChessMove(
+                    startPosition,
+                    endPosition,
+                    PieceType.ROOK
+            ));
+
+            moves.add(new ChessMove(
+                    startPosition,
+                    endPosition,
+                    PieceType.BISHOP
+            ));
+
+            moves.add(new ChessMove(
+                    startPosition,
+                    endPosition,
+                    PieceType.KNIGHT
+            ));
+
+        } else {
+            moves.add(new ChessMove(
+                    startPosition,
+                    endPosition,
+                    null
+            ));
+        }
+    }
 
     @Override
     public boolean equals(Object o) {
