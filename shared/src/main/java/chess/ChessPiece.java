@@ -358,11 +358,7 @@ public class ChessPiece {
     /**
      * Adds a normal pawn move or all possible promotion moves.
      */
-    private void addPawnMove(
-            Collection<ChessMove> moves,
-            ChessPosition startPosition,
-            ChessPosition endPosition,
-            int promotionRow) {
+    private void addPawnMove(Collection<ChessMove> moves, ChessPosition startPosition, ChessPosition endPosition, int promotionRow) {
 
         if (endPosition.getRow() == promotionRow) {
 
