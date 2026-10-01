@@ -280,7 +280,7 @@ public class ChessPiece {
 
             if (board.getPiece(oneStepPosition) == null) {
 
-                addPawnMove(moves, myPosition, capturePosition, promotionRow);
+                addPawnMove(moves, myPosition, oneStepPosition, promotionRow);
 
                 // Move forward two squares from starting row
                 if (currentRow == startingRow) {
