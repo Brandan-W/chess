@@ -108,8 +108,15 @@ public class ChessGame {
             throw new InvalidMoveException();
         }
 
-        // Move the piece to its new position
-        board.addPiece(move.getEndPosition(), piece);
+        // Handle pawn promotion
+        if (move.getPromotionPiece() != null) {
+            ChessPiece promotedPiece =
+                    new ChessPiece(piece.getTeamColor(), move.getPromotionPiece());
+
+            board.addPiece(move.getEndPosition(), promotedPiece);
+        } else {
+            board.addPiece(move.getEndPosition(), piece);
+        }
 
         // Remove the piece from its old position
         board.addPiece(move.getStartPosition(), null);
