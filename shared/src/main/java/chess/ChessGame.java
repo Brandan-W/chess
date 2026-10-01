@@ -120,6 +120,12 @@ public class ChessGame {
             throw new InvalidMoveException();
         }
 
+        // A castling move is a king moving two columns
+        boolean isCastling =
+                piece.getPieceType() == ChessPiece.PieceType.KING
+                && Math.abs(move.getEndPosition().getColumn()
+                - move.getStartPosition().getColumn()) == 2;
+
         // Handle pawn promotion
         if (move.getPromotionPiece() != null) {
             ChessPiece promotedPiece =
@@ -132,6 +138,11 @@ public class ChessGame {
 
         // Remove the piece from its old position
         board.addPiece(move.getStartPosition(), null);
+
+        // Castling also moves the rook
+        if (isCastling) {
+            moveCastlingRook(move.getEndPosition());
+        }
 
         // Remember if a king or original rook has moved
         recordPieceMoved(piece, move.getStartPosition());
@@ -173,16 +184,28 @@ public class ChessGame {
                 ChessPosition position = new ChessPosition(row, col);
                 ChessPiece piece = board.getPiece(position);
 
-                if (piece != null && piece.getTeamColor() != teamColor) {
-                    Collection<ChessMove> moves =
-                            piece.pieceMoves(board, position);
-
-                    for (ChessMove move : moves) {
-                        if (move.getEndPosition().equals(kingPosition)) {
-                            return true;
-                        }
-                    }
+                if (piece != null
+                        && piece.getTeamColor() != teamColor
+                        && pieceCanAttackKing(piece, position, kingPosition)) {
+                    return true;
                 }
+            }
+        }
+
+        return false;
+    }
+
+    private boolean pieceCanAttackKing(
+            ChessPiece piece,
+            ChessPosition piecePosition,
+            ChessPosition kingPosition) {
+
+        Collection<ChessMove> moves =
+                piece.pieceMoves(board, piecePosition);
+
+        for (ChessMove move : moves) {
+            if (move.getEndPosition().equals(kingPosition)) {
+                return true;
             }
         }
 
@@ -359,6 +382,33 @@ public class ChessGame {
         board.addPiece(destination, capturedPiece);
 
         return safe;
+    }
+
+    private void moveCastlingRook(ChessPosition kingEndPosition) {
+        int row = kingEndPosition.getRow();
+        int kingColumn = kingEndPosition.getColumn();
+
+        // Queenside castle
+        if (kingColumn == 3) {
+            ChessPosition rookStart = new ChessPosition(row, 1);
+            ChessPosition rookEnd = new ChessPosition(row, 4);
+
+            ChessPiece rook = board.getPiece(rookStart);
+
+            board.addPiece(rookEnd, rook);
+            board.addPiece(rookStart, null);
+        }
+
+        // Kingside castle
+        if (kingColumn == 7) {
+            ChessPosition rookStart = new ChessPosition(row, 8);
+            ChessPosition rookEnd = new ChessPosition(row, 6);
+
+            ChessPiece rook = board.getPiece(rookStart);
+
+            board.addPiece(rookEnd, rook);
+            board.addPiece(rookStart, null);
+        }
     }
 
     @Override
