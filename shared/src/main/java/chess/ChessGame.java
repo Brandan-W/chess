@@ -107,6 +107,19 @@ public class ChessGame {
         if (!legalMoves.contains(move)) {
             throw new InvalidMoveException();
         }
+
+        // Move the piece to its new position
+        board.addPiece(move.getEndPosition(), piece);
+
+        // Remove the piece from its old position
+        board.addPiece(move.getStartPosition(), null);
+
+        // Change to the other team's turn
+        if (teamTurn == TeamColor.WHITE) {
+            teamTurn = TeamColor.BLACK;
+        } else {
+            teamTurn = TeamColor.WHITE;
+        }
     }
 
     /**
