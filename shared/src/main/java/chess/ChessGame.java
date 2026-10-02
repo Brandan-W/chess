@@ -92,6 +92,11 @@ public class ChessGame {
             addCastlingMoves(piece, startPosition, validMoves);
         }
 
+        // Add en passant move for a pawn when allowed
+        if (piece.getPieceType() == ChessPiece.PieceType.PAWN) {
+            addEnPassantMove(piece, startPosition, validMoves);
+        }
+
         return validMoves;
     }
 
@@ -428,6 +433,51 @@ public class ChessGame {
             board.addPiece(rookEnd, rook);
             board.addPiece(rookStart, null);
         }
+    }
+
+    private void addEnPassantMove(
+            ChessPiece pawn,
+            ChessPosition pawnPosition,
+            Collection<ChessMove> validMoves) {
+
+        if (!lastMoveWasDoublePawnMove()) {
+            return;
+        }
+
+        ChessPosition lastStart = lastMove.getStartPosition();
+        ChessPosition lastEnd = lastMove.getEndPosition();
+
+        ChessPiece lastPawn = board.getPiece(lastEnd);
+
+        // The pawn that just moved must belong to the other team
+        if (lastPawn == null
+                || lastPawn.getTeamColor() == pawn.getTeamColor()) {
+            return;
+        }
+
+        // The two pawns must now be beside each other
+        if (lastEnd.getRow() != pawnPosition.getRow()
+                || Math.abs(lastEnd.getColumn()
+                - pawnPosition.getColumn()) != 1) {
+            return;
+        }
+
+        int direction;
+
+        if (pawn.getTeamColor() == TeamColor.WHITE) {
+            direction = 1;
+        } else {
+            direction = -1;
+        }
+
+        ChessPosition destination = new ChessPosition(
+                pawnPosition.getRow() + direction,
+                lastEnd.getColumn());
+
+        validMoves.add(new ChessMove(
+                pawnPosition,
+                destination,
+                null));
     }
 
     @Override
