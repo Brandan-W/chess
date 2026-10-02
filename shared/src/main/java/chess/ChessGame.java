@@ -20,6 +20,7 @@ public class ChessGame {
     private boolean whiteRightRookMoved;
     private boolean blackLeftRookMoved;
     private boolean blackRightRookMoved;
+    private ChessMove lastMove;
 
     public ChessGame() {
         board = new ChessBoard();
@@ -146,6 +147,9 @@ public class ChessGame {
 
         // Remember if a king or original rook has moved
         recordPieceMoved(piece, move.getStartPosition());
+
+        // Remember this move for special moves such as en passant
+        lastMove = move;
 
         // Change to the other team's turn
         if (teamTurn == TeamColor.WHITE) {
@@ -281,6 +285,21 @@ public class ChessGame {
                 }
             }
         }
+    }
+
+    private boolean lastMoveWasDoublePawnMove() {
+        if (lastMove == null) {
+            return false;
+        }
+
+        ChessPosition start = lastMove.getStartPosition();
+        ChessPosition end = lastMove.getEndPosition();
+
+        ChessPiece movedPiece = board.getPiece(end);
+
+        return movedPiece != null
+                && movedPiece.getPieceType() == ChessPiece.PieceType.PAWN
+                && Math.abs(end.getRow() - start.getRow()) == 2;
     }
 
     private void addCastlingMoves(
