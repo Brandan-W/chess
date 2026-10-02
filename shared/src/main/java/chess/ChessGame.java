@@ -346,7 +346,7 @@ public class ChessGame {
             return;
         }
 
-        // Queenside castle: king moves from column 5 to column 3.
+        // Queen side castle: king moves from column 5 to column 3.
         ChessPosition leftRookPosition = new ChessPosition(row, 1);
         ChessPiece leftRook = board.getPiece(leftRookPosition);
 
@@ -366,7 +366,7 @@ public class ChessGame {
                     null));
         }
 
-        // Kingside castle: king moves from column 5 to column 7.
+        // King side castle: king moves from column 5 to column 7.
         ChessPosition rightRookPosition = new ChessPosition(row, 8);
         ChessPiece rightRook = board.getPiece(rightRookPosition);
 
@@ -415,7 +415,7 @@ public class ChessGame {
         int row = kingEndPosition.getRow();
         int kingColumn = kingEndPosition.getColumn();
 
-        // Queenside castle
+        // Queen side castle
         if (kingColumn == 3) {
             ChessPosition rookStart = new ChessPosition(row, 1);
             ChessPosition rookEnd = new ChessPosition(row, 4);
@@ -426,7 +426,7 @@ public class ChessGame {
             board.addPiece(rookStart, null);
         }
 
-        // Kingside castle
+        // King side castle
         if (kingColumn == 7) {
             ChessPosition rookStart = new ChessPosition(row, 8);
             ChessPosition rookEnd = new ChessPosition(row, 6);
@@ -447,7 +447,6 @@ public class ChessGame {
             return;
         }
 
-        ChessPosition lastStart = lastMove.getStartPosition();
         ChessPosition lastEnd = lastMove.getEndPosition();
 
         ChessPiece lastPawn = board.getPiece(lastEnd);
