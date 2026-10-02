@@ -132,6 +132,9 @@ public class ChessGame {
                 && Math.abs(move.getEndPosition().getColumn()
                 - move.getStartPosition().getColumn()) == 2;
 
+        // Remove the captured pawn when performing en passant
+        removeEnPassantPawn(piece, move);
+
         // Handle pawn promotion
         if (move.getPromotionPiece() != null) {
             ChessPiece promotedPiece =
@@ -478,6 +481,36 @@ public class ChessGame {
                 pawnPosition,
                 destination,
                 null));
+    }
+
+    private void removeEnPassantPawn(
+            ChessPiece piece,
+            ChessMove move) {
+
+        if (piece.getPieceType() != ChessPiece.PieceType.PAWN) {
+            return;
+        }
+
+        ChessPosition start = move.getStartPosition();
+        ChessPosition end = move.getEndPosition();
+
+        // En passant is a diagonal pawn move into an empty square
+        if (start.getColumn() == end.getColumn()
+                || board.getPiece(end) != null) {
+            return;
+        }
+
+        ChessPosition capturedPawnPosition =
+                new ChessPosition(start.getRow(), end.getColumn());
+
+        ChessPiece capturedPawn = board.getPiece(capturedPawnPosition);
+
+        if (capturedPawn != null
+                && capturedPawn.getPieceType() == ChessPiece.PieceType.PAWN
+                && capturedPawn.getTeamColor() != piece.getTeamColor()) {
+
+            board.addPiece(capturedPawnPosition, null);
+        }
     }
 
     @Override
