@@ -1,15 +1,17 @@
 package server;
 
 import com.google.gson.Gson;
+import dataaccess.*;
 import handler.ClearHandler;
 import handler.LoginHandler;
+import handler.LogoutHandler;
 import handler.RegisterHandler;
 import io.javalin.Javalin;
 import io.javalin.json.JsonMapper;
-import dataaccess.*;
 import org.jetbrains.annotations.NotNull;
 import service.ClearService;
 import service.LoginService;
+import service.LogoutService;
 import service.RegisterService;
 
 import java.lang.reflect.Type;
@@ -29,11 +31,13 @@ public class Server {
         var clearService = new ClearService(userDAO, authDAO, gameDAO);
         var registerService = new RegisterService(userDAO, authDAO);
         var loginService = new LoginService(userDAO, authDAO);
+        var logoutService = new LogoutService(authDAO);
 
         // Create handlers
         var clearHandler = new ClearHandler(clearService);
         var registerHandler = new RegisterHandler(registerService);
         var loginHandler = new LoginHandler(loginService);
+        var logoutHandler = new LogoutHandler(logoutService);
 
         // Configure Gson for JSON serialization
         Gson gson = new Gson();
@@ -64,6 +68,7 @@ public class Server {
         javalin.delete("/db", clearHandler);
         javalin.post("/user", registerHandler);
         javalin.post("/session", loginHandler);
+        javalin.delete("/session", logoutHandler);
     }
 
     public int run(int port) {
