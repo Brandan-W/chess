@@ -1,15 +1,15 @@
 package server;
 
 import com.google.gson.Gson;
+import handler.ClearHandler;
+import handler.LoginHandler;
+import handler.RegisterHandler;
 import io.javalin.Javalin;
 import io.javalin.json.JsonMapper;
-import handler.ClearHandler;
-import handler.RegisterHandler;
-import dataaccess.MemoryAuthDAO;
-import dataaccess.MemoryGameDAO;
-import dataaccess.MemoryUserDAO;
+import dataaccess.*;
 import org.jetbrains.annotations.NotNull;
 import service.ClearService;
+import service.LoginService;
 import service.RegisterService;
 
 import java.lang.reflect.Type;
@@ -19,18 +19,21 @@ public class Server {
     private final Javalin javalin;
 
     public Server() {
-        // Create data access objects
-        var userDAO = new MemoryUserDAO();
-        var authDAO = new MemoryAuthDAO();
-        var gameDAO = new MemoryGameDAO();
+
+        // Create in-memory data access objects
+        UserDAO userDAO = new MemoryUserDAO();
+        AuthDAO authDAO = new MemoryAuthDAO();
+        GameDAO gameDAO = new MemoryGameDAO();
 
         // Create services
         var clearService = new ClearService(userDAO, authDAO, gameDAO);
         var registerService = new RegisterService(userDAO, authDAO);
+        var loginService = new LoginService(userDAO, authDAO);
 
         // Create handlers
         var clearHandler = new ClearHandler(clearService);
         var registerHandler = new RegisterHandler(registerService);
+        var loginHandler = new LoginHandler(loginService);
 
         // Configure Gson for JSON serialization
         Gson gson = new Gson();
@@ -41,13 +44,17 @@ public class Server {
             config.jsonMapper(new JsonMapper() {
                 @Override
                 @NotNull
-                public String toJsonString(@NotNull Object obj, @NotNull Type type) {
+                public String toJsonString(
+                        @NotNull Object obj,
+                        @NotNull Type type) {
                     return gson.toJson(obj, type);
                 }
 
                 @Override
                 @NotNull
-                public <T> T fromJsonString(@NotNull String json, @NotNull Type targetType) {
+                public <T> T fromJsonString(
+                        @NotNull String json,
+                        @NotNull Type targetType) {
                     return gson.fromJson(json, targetType);
                 }
             });
@@ -56,6 +63,7 @@ public class Server {
         // Register HTTP endpoints
         javalin.delete("/db", clearHandler);
         javalin.post("/user", registerHandler);
+        javalin.post("/session", loginHandler);
     }
 
     public int run(int port) {
