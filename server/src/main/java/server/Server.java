@@ -89,9 +89,9 @@ public class Server {
         javalin.put("/game", joinGameHandler);
     }
 
-    public int run(int port) {
-        javalin.start(port);
-        return port;
+    public int run(int desiredPort) {
+        javalin.start(desiredPort);
+        return javalin.port();
     }
 
     public void stop() {
