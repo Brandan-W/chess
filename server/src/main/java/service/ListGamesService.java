@@ -5,6 +5,7 @@ import dataaccess.DataAccessException;
 import dataaccess.GameDAO;
 import model.GameData;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ListGamesService {
@@ -27,6 +28,6 @@ public class ListGamesService {
         }
 
         // Retrieve all existing games
-        return gameDAO.listGames();
+        return new ArrayList<>(gameDAO.listGames());
     }
 }
