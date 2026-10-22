@@ -1,9 +1,11 @@
 package server;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import dataaccess.*;
 import handler.ClearHandler;
 import handler.CreateGameHandler;
+import handler.JoinGameHandler;
 import handler.ListGamesHandler;
 import handler.LoginHandler;
 import handler.LogoutHandler;
@@ -13,6 +15,7 @@ import io.javalin.json.JsonMapper;
 import org.jetbrains.annotations.NotNull;
 import service.ClearService;
 import service.CreateGameService;
+import service.JoinGameService;
 import service.ListGamesService;
 import service.LoginService;
 import service.LogoutService;
@@ -38,6 +41,7 @@ public class Server {
         var logoutService = new LogoutService(authDAO);
         var listGamesService = new ListGamesService(authDAO, gameDAO);
         var createGameService = new CreateGameService(authDAO, gameDAO);
+        var joinGameService = new JoinGameService(authDAO, gameDAO);
 
         // Create handlers
         var clearHandler = new ClearHandler(clearService);
@@ -46,9 +50,10 @@ public class Server {
         var logoutHandler = new LogoutHandler(logoutService);
         var listGamesHandler = new ListGamesHandler(listGamesService);
         var createGameHandler = new CreateGameHandler(createGameService);
+        var joinGameHandler = new JoinGameHandler(joinGameService);
 
         // Configure Gson for JSON serialization
-        Gson gson = new com.google.gson.GsonBuilder()
+        Gson gson = new GsonBuilder()
                 .serializeNulls()
                 .create();
 
@@ -81,6 +86,7 @@ public class Server {
         javalin.delete("/session", logoutHandler);
         javalin.get("/game", listGamesHandler);
         javalin.post("/game", createGameHandler);
+        javalin.put("/game", joinGameHandler);
     }
 
     public int run(int port) {
