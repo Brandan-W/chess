@@ -7,6 +7,7 @@ import model.AuthData;
 import model.UserData;
 
 import java.util.UUID;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class RegisterService {
 
@@ -34,7 +35,8 @@ public class RegisterService {
         }
 
         // Store the new user
-        UserData user = new UserData(username, password, email);
+        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+        UserData user = new UserData(username, hashedPassword, email);
         userDAO.createUser(user);
 
         // Generate and store an authentication token

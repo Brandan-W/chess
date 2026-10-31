@@ -7,6 +7,7 @@ import model.AuthData;
 import model.UserData;
 
 import java.util.UUID;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class LoginService {
 
@@ -31,7 +32,7 @@ public class LoginService {
         UserData user = userDAO.getUser(username);
 
         // Verify the username and password
-        if (user == null || !user.password().equals(password)) {
+        if (user == null || !BCrypt.checkpw(password, user.password())) {
             throw new SecurityException("Invalid username or password");
         }
 
@@ -46,3 +47,4 @@ public class LoginService {
         return auth;
     }
 }
+
