@@ -6,6 +6,7 @@ import model.AuthData;
 import model.UserData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mindrot.jbcrypt.BCrypt;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,10 +23,10 @@ public class LoginServiceTest {
 
         loginService = new LoginService(userDAO, authDAO);
 
-        // Create an existing user for login tests
+        // Store a BCrypt hash, just as registration does in Phase 4.
         userDAO.createUser(new UserData(
                 "testuser",
-                "password123",
+                BCrypt.hashpw("password123", BCrypt.gensalt()),
                 "test@example.com"
         ));
     }
@@ -70,3 +71,4 @@ public class LoginServiceTest {
         );
     }
 }
+
