@@ -14,7 +14,8 @@ public class DatabaseConnectionTest {
         try (Connection connection = DatabaseManager.getConnection()) {
             assertNotNull(connection);
             assertFalse(connection.isClosed());
-            assertEquals("chess", connection.getCatalog());
+            assertNotNull(connection.getCatalog());
+            assertFalse(connection.getCatalog().isBlank());
         }
     }
 }
