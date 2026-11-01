@@ -1,5 +1,7 @@
 package dataaccess;
 
+import dataaccess.sql.SQLGameDAO;
+
 import chess.ChessGame;
 import chess.ChessMove;
 import chess.ChessPiece;
