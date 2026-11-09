@@ -165,4 +165,21 @@ public class ServerFacadeTests {
                 facade.joinGame(player2.authToken(), "WHITE", gameID));
     }
 
+    @Test
+    public void createGameMissingName() throws Exception {
+        AuthData auth = facade.register(
+                "player1", "password123", "player1@example.com");
+
+        assertThrows(IOException.class, () ->
+                facade.createGame(auth.authToken(), ""));
+    }
+
+    @Test
+    public void joinGameInvalidGameID() throws Exception {
+        AuthData auth = facade.register(
+                "player1", "password123", "player1@example.com");
+
+        assertThrows(IOException.class, () ->
+                facade.joinGame(auth.authToken(), "WHITE", -1));
+    }
 }
