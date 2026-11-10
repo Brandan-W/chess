@@ -1,8 +1,13 @@
 package client;
 
+import chess.ChessBoard;
+import chess.ChessGame;
 import model.AuthData;
+import model.GameData;
+import ui.ChessBoardRenderer;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Scanner;
 
 public class ChessClient {
@@ -15,6 +20,7 @@ public class ChessClient {
 
     private final ServerFacade facade;
     private final Scanner scanner;
+    private final ChessBoardRenderer renderer;
     private State state;
     private String authToken;
     private String username;
@@ -22,6 +28,7 @@ public class ChessClient {
     public ChessClient(ServerFacade facade) {
         this.facade = facade;
         this.scanner = new Scanner(System.in);
+        this.renderer = new ChessBoardRenderer();
         this.state = State.SIGNED_OUT;
     }
 
@@ -49,7 +56,7 @@ public class ChessClient {
                 if (state == State.SIGNED_OUT) {
                     handleSignedOut(command, parts);
                 } else {
-                    handleSignedIn(command, parts);
+                    handleSignedIn(command, parts, input);
                 }
             } catch (IOException e) {
                 System.out.println("Error: " + e.getMessage());
@@ -78,11 +85,16 @@ public class ChessClient {
         }
     }
 
-    private void handleSignedIn(String command, String[] parts)
+    private void handleSignedIn(
+            String command, String[] parts, String input)
             throws IOException, InterruptedException {
 
         switch (command) {
             case "help" -> printHelp();
+            case "list" -> listGames();
+            case "create" -> createGame(input);
+            case "join" -> joinGame(parts);
+            case "observe" -> observeGame(parts);
             case "logout" -> logout();
             case "quit" -> state = State.QUIT;
             default -> System.out.println(
@@ -133,6 +145,149 @@ public class ChessClient {
         printHelp();
     }
 
+    private void listGames()
+            throws IOException, InterruptedException {
+
+        List<GameData> games = facade.listGames(authToken);
+
+        if (games.isEmpty()) {
+            System.out.println("No games available.");
+            return;
+        }
+
+        System.out.println("\nAvailable games:");
+
+        for (GameData game : games) {
+            String white = game.whiteUsername() == null
+                    ? "Available" : game.whiteUsername();
+
+            String black = game.blackUsername() == null
+                    ? "Available" : game.blackUsername();
+
+            System.out.printf(
+                    "  ID: %d | %s | White: %s | Black: %s%n",
+                    game.gameID(),
+                    game.gameName(),
+                    white,
+                    black
+            );
+        }
+    }
+
+    private void createGame(String input)
+            throws IOException, InterruptedException {
+
+        String[] parts = input.split("\\s+", 2);
+
+        if (parts.length < 2 || parts[1].isBlank()) {
+            System.out.println("Usage: create <game name>");
+            return;
+        }
+
+        String gameName = parts[1].trim();
+        int gameID = facade.createGame(authToken, gameName);
+
+        System.out.println(
+                "Game created successfully! ID: " + gameID);
+    }
+
+    private void joinGame(String[] parts)
+            throws IOException, InterruptedException {
+
+        if (parts.length != 3) {
+            System.out.println(
+                    "Usage: join <game ID> <WHITE|BLACK>");
+            return;
+        }
+
+        int gameID = parseGameID(parts[1]);
+
+        ChessGame.TeamColor color;
+        try {
+            color = ChessGame.TeamColor.valueOf(
+                    parts[2].toUpperCase());
+        } catch (IllegalArgumentException e) {
+            System.out.println(
+                    "Invalid color. Choose WHITE or BLACK.");
+            return;
+        }
+
+        GameData game = findGame(gameID);
+
+        if (game == null) {
+            System.out.println("Game not found.");
+            return;
+        }
+
+        facade.joinGame(authToken, color.name(), gameID);
+
+        System.out.println(
+                "Joined game " + gameID + " as " + color + "!");
+
+        drawGameBoard(game, color);
+    }
+
+    private void observeGame(String[] parts)
+            throws IOException, InterruptedException {
+
+        if (parts.length != 2) {
+            System.out.println("Usage: observe <game ID>");
+            return;
+        }
+
+        int gameID = parseGameID(parts[1]);
+        GameData game = findGame(gameID);
+
+        if (game == null) {
+            System.out.println("Game not found.");
+            return;
+        }
+
+        System.out.println(
+                "Observing game " + gameID + ": "
+                        + game.gameName());
+
+        drawGameBoard(game, ChessGame.TeamColor.WHITE);
+    }
+
+    private int parseGameID(String value) {
+        try {
+            int gameID = Integer.parseInt(value);
+
+            if (gameID <= 0) {
+                throw new NumberFormatException();
+            }
+
+            return gameID;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(
+                    "Game ID must be a positive integer.");
+        }
+    }
+
+    private GameData findGame(int gameID)
+            throws IOException, InterruptedException {
+
+        List<GameData> games = facade.listGames(authToken);
+
+        for (GameData game : games) {
+            if (game.gameID() == gameID) {
+                return game;
+            }
+        }
+
+        return null;
+    }
+
+    private void drawGameBoard(
+            GameData game, ChessGame.TeamColor perspective) {
+
+        ChessBoard board = new ChessBoard();
+        board.resetBoard();
+
+        renderer.drawBoard(board, perspective);
+    }
+
     private void signIn(AuthData auth) {
         authToken = auth.authToken();
         username = auth.username();
@@ -154,9 +309,17 @@ public class ChessClient {
                     "  login <user> <pass>           Log in");
             System.out.println(
                     "  quit                         Exit");
-        } else {
+        } else if (state == State.SIGNED_IN) {
             System.out.println(
                     "  help                         Show commands");
+            System.out.println(
+                    "  list                         List available games");
+            System.out.println(
+                    "  create <game name>           Create a game");
+            System.out.println(
+                    "  join <ID> <WHITE|BLACK>        Join a game");
+            System.out.println(
+                    "  observe <ID>                 Observe a game");
             System.out.println(
                     "  logout                       Log out");
             System.out.println(
