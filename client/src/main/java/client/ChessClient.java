@@ -104,17 +104,44 @@ public class ChessClient {
         }
     }
 
+    private String prompt(String label) {
+        System.out.print(label + ": ");
+
+        if (!scanner.hasNextLine()) {
+            state = State.QUIT;
+            throw new IllegalArgumentException(
+                    "Input ended before the command was completed.");
+        }
+
+        return scanner.nextLine().trim();
+    }
+
     private void register(String[] parts)
             throws IOException, InterruptedException {
 
-        if (parts.length != 4) {
+        if (parts.length != 1 && parts.length != 4) {
             System.out.println(
                     "Usage: register <username> <password> <email>");
             return;
         }
 
+        String user = parts.length == 4
+                ? parts[1] : prompt("Username");
+
+        String password = parts.length == 4
+                ? parts[2] : prompt("Password");
+
+        String email = parts.length == 4
+                ? parts[3] : prompt("Email");
+
+        if (user.isBlank() || password.isBlank() || email.isBlank()) {
+            System.out.println(
+                    "All registration fields are required.");
+            return;
+        }
+
         AuthData auth = facade.register(
-                parts[1], parts[2], parts[3]);
+                user, password, email);
 
         signIn(auth);
         System.out.println("Registered successfully!");
@@ -123,13 +150,25 @@ public class ChessClient {
     private void login(String[] parts)
             throws IOException, InterruptedException {
 
-        if (parts.length != 3) {
+        if (parts.length != 1 && parts.length != 3) {
             System.out.println(
                     "Usage: login <username> <password>");
             return;
         }
 
-        AuthData auth = facade.login(parts[1], parts[2]);
+        String user = parts.length == 3
+                ? parts[1] : prompt("Username");
+
+        String password = parts.length == 3
+                ? parts[2] : prompt("Password");
+
+        if (user.isBlank() || password.isBlank()) {
+            System.out.println(
+                    "Username and password are required.");
+            return;
+        }
+
+        AuthData auth = facade.login(user, password);
 
         signIn(auth);
         System.out.println("Logged in successfully!");
@@ -188,15 +227,16 @@ public class ChessClient {
 
         String[] parts = input.split("\\s+", 2);
 
-        if (parts.length < 2 || parts[1].isBlank()) {
-            System.out.println("Usage: create <game name>");
+        String gameName = parts.length == 2
+                ? parts[1].trim() : prompt("Game name");
+
+        if (gameName.isBlank()) {
+            System.out.println(
+                    "Game name cannot be empty.");
             return;
         }
 
-        String gameName = parts[1].trim();
-
         facade.createGame(authToken, gameName);
-
         displayedGames = List.of();
 
         System.out.println(
@@ -206,19 +246,25 @@ public class ChessClient {
     private void joinGame(String[] parts)
             throws IOException, InterruptedException {
 
-        if (parts.length != 3) {
+        if (parts.length != 1 && parts.length != 3) {
             System.out.println(
                     "Usage: join <game number> <WHITE|BLACK>");
             return;
         }
 
-        int gameNumber = parseGameNumber(parts[1]);
+        String numberInput = parts.length == 3
+                ? parts[1] : prompt("Game number");
+
+        String colorInput = parts.length == 3
+                ? parts[2] : prompt("Color (WHITE or BLACK)");
+
+        int gameNumber = parseGameNumber(numberInput);
 
         ChessGame.TeamColor color;
 
         try {
             color = ChessGame.TeamColor.valueOf(
-                    parts[2].toUpperCase());
+                    colorInput.toUpperCase());
         } catch (IllegalArgumentException e) {
             System.out.println(
                     "Invalid color. Choose WHITE or BLACK.");
@@ -248,13 +294,16 @@ public class ChessClient {
     private void observeGame(String[] parts)
             throws IOException, InterruptedException {
 
-        if (parts.length != 2) {
+        if (parts.length != 1 && parts.length != 2) {
             System.out.println(
                     "Usage: observe <game number>");
             return;
         }
 
-        int gameNumber = parseGameNumber(parts[1]);
+        String numberInput = parts.length == 2
+                ? parts[1] : prompt("Game number");
+
+        int gameNumber = parseGameNumber(numberInput);
 
         GameData game = findGame(gameNumber);
 
@@ -321,9 +370,9 @@ public class ChessClient {
             System.out.println(
                     "  help                         Show commands");
             System.out.println(
-                    "  register <user> <pass> <email> Create account");
+                    "  register                     Create an account");
             System.out.println(
-                    "  login <user> <pass>           Log in");
+                    "  login                        Log in");
             System.out.println(
                     "  quit                         Exit");
         } else if (state == State.SIGNED_IN) {
@@ -332,11 +381,11 @@ public class ChessClient {
             System.out.println(
                     "  list                         List available games");
             System.out.println(
-                    "  create <game name>           Create a game");
+                    "  create                       Create a game");
             System.out.println(
-                    "  join <number> <WHITE|BLACK>   Join a listed game");
+                    "  join                         Join a listed game");
             System.out.println(
-                    "  observe <number>             Observe a listed game");
+                    "  observe                      Observe a listed game");
             System.out.println(
                     "  logout                       Log out");
             System.out.println(
