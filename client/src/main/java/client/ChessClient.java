@@ -21,9 +21,11 @@ public class ChessClient {
     private final ServerFacade facade;
     private final Scanner scanner;
     private final ChessBoardRenderer renderer;
+
     private State state;
     private String authToken;
     private String username;
+    private List<GameData> displayedGames = List.of();
 
     public ChessClient(ServerFacade facade) {
         this.facade = facade;
@@ -137,8 +139,10 @@ public class ChessClient {
             throws IOException, InterruptedException {
 
         facade.logout(authToken);
+
         authToken = null;
         username = null;
+        displayedGames = List.of();
         state = State.SIGNED_OUT;
 
         System.out.println("Logged out successfully!");
@@ -148,16 +152,21 @@ public class ChessClient {
     private void listGames()
             throws IOException, InterruptedException {
 
-        List<GameData> games = facade.listGames(authToken);
+        displayedGames = List.of();
 
-        if (games.isEmpty()) {
+        List<GameData> games = facade.listGames(authToken);
+        displayedGames = List.copyOf(games);
+
+        if (displayedGames.isEmpty()) {
             System.out.println("No games available.");
             return;
         }
 
         System.out.println("\nAvailable games:");
 
-        for (GameData game : games) {
+        for (int i = 0; i < displayedGames.size(); i++) {
+            GameData game = displayedGames.get(i);
+
             String white = game.whiteUsername() == null
                     ? "Available" : game.whiteUsername();
 
@@ -165,8 +174,8 @@ public class ChessClient {
                     ? "Available" : game.blackUsername();
 
             System.out.printf(
-                    "  ID: %d | %s | White: %s | Black: %s%n",
-                    game.gameID(),
+                    "  %d. %s | White: %s | Black: %s%n",
+                    i + 1,
                     game.gameName(),
                     white,
                     black
@@ -185,10 +194,13 @@ public class ChessClient {
         }
 
         String gameName = parts[1].trim();
-        int gameID = facade.createGame(authToken, gameName);
+
+        facade.createGame(authToken, gameName);
+
+        displayedGames = List.of();
 
         System.out.println(
-                "Game created successfully! ID: " + gameID);
+                "Game created successfully! Type list to see games.");
     }
 
     private void joinGame(String[] parts)
@@ -196,13 +208,14 @@ public class ChessClient {
 
         if (parts.length != 3) {
             System.out.println(
-                    "Usage: join <game ID> <WHITE|BLACK>");
+                    "Usage: join <game number> <WHITE|BLACK>");
             return;
         }
 
-        int gameID = parseGameID(parts[1]);
+        int gameNumber = parseGameNumber(parts[1]);
 
         ChessGame.TeamColor color;
+
         try {
             color = ChessGame.TeamColor.valueOf(
                     parts[2].toUpperCase());
@@ -212,75 +225,78 @@ public class ChessClient {
             return;
         }
 
-        GameData game = findGame(gameID);
+        GameData game = findGame(gameNumber);
 
         if (game == null) {
-            System.out.println("Game not found.");
+            System.out.println(
+                    "Game number not found. Type list to see games.");
             return;
         }
 
-        facade.joinGame(authToken, color.name(), gameID);
+        facade.joinGame(
+                authToken,
+                color.name(),
+                game.gameID()
+        );
 
         System.out.println(
-                "Joined game " + gameID + " as " + color + "!");
+                "Joined " + game.gameName() + " as " + color + "!");
 
-        drawGameBoard(game, color);
+        drawGameBoard(color);
     }
 
     private void observeGame(String[] parts)
             throws IOException, InterruptedException {
 
         if (parts.length != 2) {
-            System.out.println("Usage: observe <game ID>");
+            System.out.println(
+                    "Usage: observe <game number>");
             return;
         }
 
-        int gameID = parseGameID(parts[1]);
-        GameData game = findGame(gameID);
+        int gameNumber = parseGameNumber(parts[1]);
+
+        GameData game = findGame(gameNumber);
 
         if (game == null) {
-            System.out.println("Game not found.");
+            System.out.println(
+                    "Game number not found. Type list to see games.");
             return;
         }
 
         System.out.println(
-                "Observing game " + gameID + ": "
-                        + game.gameName());
+                "Observing " + game.gameName());
 
-        drawGameBoard(game, ChessGame.TeamColor.WHITE);
+        drawGameBoard(ChessGame.TeamColor.WHITE);
     }
 
-    private int parseGameID(String value) {
+    private int parseGameNumber(String value) {
         try {
-            int gameID = Integer.parseInt(value);
+            int gameNumber = Integer.parseInt(value);
 
-            if (gameID <= 0) {
+            if (gameNumber <= 0) {
                 throw new NumberFormatException();
             }
 
-            return gameID;
+            return gameNumber;
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(
-                    "Game ID must be a positive integer.");
+                    "Game number must be a positive integer.");
         }
     }
 
-    private GameData findGame(int gameID)
-            throws IOException, InterruptedException {
+    private GameData findGame(int gameNumber) {
 
-        List<GameData> games = facade.listGames(authToken);
-
-        for (GameData game : games) {
-            if (game.gameID() == gameID) {
-                return game;
-            }
+        if (gameNumber < 1
+                || gameNumber > displayedGames.size()) {
+            return null;
         }
 
-        return null;
+        return displayedGames.get(gameNumber - 1);
     }
 
     private void drawGameBoard(
-            GameData game, ChessGame.TeamColor perspective) {
+            ChessGame.TeamColor perspective) {
 
         ChessBoard board = new ChessBoard();
         board.resetBoard();
@@ -291,6 +307,7 @@ public class ChessClient {
     private void signIn(AuthData auth) {
         authToken = auth.authToken();
         username = auth.username();
+        displayedGames = List.of();
         state = State.SIGNED_IN;
 
         System.out.println("Welcome, " + username + "!");
@@ -317,9 +334,9 @@ public class ChessClient {
             System.out.println(
                     "  create <game name>           Create a game");
             System.out.println(
-                    "  join <ID> <WHITE|BLACK>        Join a game");
+                    "  join <number> <WHITE|BLACK>   Join a listed game");
             System.out.println(
-                    "  observe <ID>                 Observe a game");
+                    "  observe <number>             Observe a listed game");
             System.out.println(
                     "  logout                       Log out");
             System.out.println(
