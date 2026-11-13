@@ -331,11 +331,27 @@ public class ChessClient {
             return;
         }
 
+        // Check whether the selected color is already occupied.
+        String occupiedBy = color == ChessGame.TeamColor.WHITE
+                ? game.whiteUsername()
+                : game.blackUsername();
+
+        if (occupiedBy != null) {
+            System.out.println(
+                    color + " is already occupied by " + occupiedBy
+                            + ". Type list to refresh available games.");
+            return;
+        }
+
+        // Ask the server to join the selected game.
         facade.joinGame(
                 authToken,
                 color.name(),
                 game.gameID()
         );
+
+        // The game list is now outdated, so clear it.
+        clearGameList();
 
         System.out.println(
                 "Joined " + game.gameName() + " as " + color + "!");
