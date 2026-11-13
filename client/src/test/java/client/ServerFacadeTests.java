@@ -6,6 +6,7 @@ import org.junit.jupiter.api.*;
 import server.Server;
 
 import java.io.IOException;
+import java.net.ServerSocket;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -181,5 +182,52 @@ public class ServerFacadeTests {
 
         assertThrows(IOException.class, () ->
                 facade.joinGame(auth.authToken(), "WHITE", -1));
+    }
+
+    // ---------------------------------------------------------
+    // Connection failure tests
+    // ---------------------------------------------------------
+
+    private ServerFacade disconnectedFacade() throws IOException {
+        int unusedPort;
+
+        // Ask the operating system for an available local port.
+        try (ServerSocket socket = new ServerSocket(0)) {
+            unusedPort = socket.getLocalPort();
+        }
+
+        // The socket is now closed, so no test server
+        // should be listening on this port.
+        return new ServerFacade(unusedPort);
+    }
+
+    @Test
+    public void loginServerUnavailable() throws Exception {
+        ServerFacade offlineFacade = disconnectedFacade();
+
+        IOException exception = assertThrows(
+                IOException.class,
+                () -> offlineFacade.login("player1", "password123")
+        );
+
+        assertTrue(
+                exception.getMessage().contains(
+                        "Cannot connect to the chess server")
+        );
+    }
+
+    @Test
+    public void listGamesServerUnavailable() throws Exception {
+        ServerFacade offlineFacade = disconnectedFacade();
+
+        IOException exception = assertThrows(
+                IOException.class,
+                () -> offlineFacade.listGames("test-token")
+        );
+
+        assertTrue(
+                exception.getMessage().contains(
+                        "Cannot connect to the chess server")
+        );
     }
 }
