@@ -1,3 +1,4 @@
+
 package ui;
 
 import chess.ChessBoard;
@@ -75,14 +76,16 @@ public class ChessBoardRenderer {
 
     private void printFiles(boolean whitePerspective) {
 
-        System.out.print("    ");
+        // Match the board's three-character left margin.
+        System.out.print("   ");
 
         for (int i = 0; i < 8; i++) {
 
             char file = (char) (
                     'a' + (whitePerspective ? i : 7 - i));
 
-            System.out.print(" " + file + "  ");
+            // Each board square is three characters wide.
+            System.out.print(" " + file + " ");
         }
 
         System.out.println();
