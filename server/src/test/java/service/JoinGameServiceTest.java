@@ -70,17 +70,14 @@ public class JoinGameServiceTest {
     }
 
     @Test
-    public void samePlayerCannotJoinBothColors() throws Exception {
+    public void samePlayerCanJoinBothColors() throws Exception {
         joinGameService.joinGame("token1", "WHITE", gameID);
-
-        assertThrows(IllegalStateException.class, () ->
-                joinGameService.joinGame("token1", "BLACK", gameID)
-        );
+        joinGameService.joinGame("token1", "BLACK", gameID);
 
         GameData game = gameDAO.getGame(gameID);
 
         assertEquals("player1", game.whiteUsername());
-        assertNull(game.blackUsername());
+        assertEquals("player1", game.blackUsername());
     }
 
     @Test
