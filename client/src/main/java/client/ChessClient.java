@@ -26,6 +26,7 @@ public class ChessClient {
     private String authToken;
     private String username;
     private List<GameData> displayedGames = List.of();
+    private boolean gamesListed = false;
 
     public ChessClient(ServerFacade facade) {
         this.facade = facade;
@@ -78,10 +79,18 @@ public class ChessClient {
             throws IOException, InterruptedException {
 
         switch (command) {
-            case "help" -> printHelp();
+            case "help" -> {
+                if (noExtraArguments(parts)) {
+                    printHelp();
+                }
+            }
             case "register" -> register(parts);
             case "login" -> login(parts);
-            case "quit" -> state = State.QUIT;
+            case "quit" -> {
+                if (noExtraArguments(parts)) {
+                    state = State.QUIT;
+                }
+            }
             default -> System.out.println(
                     "Unknown command. Type help.");
         }
@@ -92,16 +101,42 @@ public class ChessClient {
             throws IOException, InterruptedException {
 
         switch (command) {
-            case "help" -> printHelp();
-            case "list" -> listGames();
+            case "help" -> {
+                if (noExtraArguments(parts)) {
+                    printHelp();
+                }
+            }
+            case "list" -> {
+                if (noExtraArguments(parts)) {
+                    listGames();
+                }
+            }
             case "create" -> createGame(input);
-            case "join" -> joinGame(parts);
+            case "join", "play" -> joinGame(parts);
             case "observe" -> observeGame(parts);
-            case "logout" -> logout();
-            case "quit" -> state = State.QUIT;
+            case "logout" -> {
+                if (noExtraArguments(parts)) {
+                    logout();
+                }
+            }
+            case "quit" -> {
+                if (noExtraArguments(parts)) {
+                    state = State.QUIT;
+                }
+            }
             default -> System.out.println(
                     "Unknown command. Type help.");
         }
+    }
+
+    private boolean noExtraArguments(String[] parts) {
+        if (parts.length != 1) {
+            System.out.println(
+                    "This command does not accept additional arguments.");
+            return false;
+        }
+
+        return true;
     }
 
     private String prompt(String label) {
@@ -140,8 +175,15 @@ public class ChessClient {
             return;
         }
 
-        AuthData auth = facade.register(
-                user, password, email);
+        if (!email.contains("@")
+                || email.startsWith("@")
+                || email.endsWith("@")) {
+            System.out.println(
+                    "Please enter a valid email address.");
+            return;
+        }
+
+        AuthData auth = facade.register(user, password, email);
 
         signIn(auth);
         System.out.println("Registered successfully!");
@@ -181,20 +223,26 @@ public class ChessClient {
 
         authToken = null;
         username = null;
-        displayedGames = List.of();
+        clearGameList();
         state = State.SIGNED_OUT;
 
         System.out.println("Logged out successfully!");
         printHelp();
     }
 
+    private void clearGameList() {
+        displayedGames = List.of();
+        gamesListed = false;
+    }
+
     private void listGames()
             throws IOException, InterruptedException {
 
-        displayedGames = List.of();
+        clearGameList();
 
         List<GameData> games = facade.listGames(authToken);
         displayedGames = List.copyOf(games);
+        gamesListed = true;
 
         if (displayedGames.isEmpty()) {
             System.out.println("No games available.");
@@ -237,7 +285,7 @@ public class ChessClient {
         }
 
         facade.createGame(authToken, gameName);
-        displayedGames = List.of();
+        clearGameList();
 
         System.out.println(
                 "Game created successfully! Type list to see games.");
@@ -252,13 +300,25 @@ public class ChessClient {
             return;
         }
 
+        if (!ensureGamesListed()) {
+            return;
+        }
+
         String numberInput = parts.length == 3
                 ? parts[1] : prompt("Game number");
 
+        int gameNumber = parseGameNumber(numberInput);
+
+        GameData game = findGame(gameNumber);
+
+        if (game == null) {
+            System.out.println(
+                    "Game number not found. Type list to see games.");
+            return;
+        }
+
         String colorInput = parts.length == 3
                 ? parts[2] : prompt("Color (WHITE or BLACK)");
-
-        int gameNumber = parseGameNumber(numberInput);
 
         ChessGame.TeamColor color;
 
@@ -268,14 +328,6 @@ public class ChessClient {
         } catch (IllegalArgumentException e) {
             System.out.println(
                     "Invalid color. Choose WHITE or BLACK.");
-            return;
-        }
-
-        GameData game = findGame(gameNumber);
-
-        if (game == null) {
-            System.out.println(
-                    "Game number not found. Type list to see games.");
             return;
         }
 
@@ -300,6 +352,10 @@ public class ChessClient {
             return;
         }
 
+        if (!ensureGamesListed()) {
+            return;
+        }
+
         String numberInput = parts.length == 2
                 ? parts[1] : prompt("Game number");
 
@@ -313,10 +369,25 @@ public class ChessClient {
             return;
         }
 
-        System.out.println(
-                "Observing " + game.gameName());
+        System.out.println("Observing " + game.gameName());
 
         drawGameBoard(ChessGame.TeamColor.WHITE);
+    }
+
+    private boolean ensureGamesListed() {
+        if (!gamesListed) {
+            System.out.println(
+                    "Please type list before selecting a game.");
+            return false;
+        }
+
+        if (displayedGames.isEmpty()) {
+            System.out.println(
+                    "No games available. Create a game or refresh the list.");
+            return false;
+        }
+
+        return true;
     }
 
     private int parseGameNumber(String value) {
@@ -335,7 +406,6 @@ public class ChessClient {
     }
 
     private GameData findGame(int gameNumber) {
-
         if (gameNumber < 1
                 || gameNumber > displayedGames.size()) {
             return null;
@@ -356,7 +426,7 @@ public class ChessClient {
     private void signIn(AuthData auth) {
         authToken = auth.authToken();
         username = auth.username();
-        displayedGames = List.of();
+        clearGameList();
         state = State.SIGNED_IN;
 
         System.out.println("Welcome, " + username + "!");
@@ -383,7 +453,7 @@ public class ChessClient {
             System.out.println(
                     "  create                       Create a game");
             System.out.println(
-                    "  join                         Join a listed game");
+                    "  join / play                  Join a listed game");
             System.out.println(
                     "  observe                      Observe a listed game");
             System.out.println(
