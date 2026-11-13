@@ -44,6 +44,13 @@ public class JoinGameService {
         }
 
         String username = authData.username();
+
+        if (username.equals(game.whiteUsername())
+                || username.equals(game.blackUsername())) {
+            throw new IllegalStateException(
+                    "You are already playing in this game");
+        }
+
         GameData updatedGame;
 
         if (playerColor.equals("WHITE")) {
